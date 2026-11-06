@@ -1,65 +1,57 @@
 # tiny-normal
 
-Small, allocation-free standard-normal sampling for Rust. Standard library only,
-no dependencies.
+A small Rust crate for generating normally distributed (Gaussian) random numbers.
+It has no dependencies, just the standard library.
 
-- **`NormalSampler`**: 32 bytes of state. A 128-slot modified undergraph Ziggurat
-  with an exact packed alias and chord-triangle overhangs, plus a Box–Muller reference.
-- **`NormalSampler4`**: four jump-separated streams in 256 bytes. A branch-free
-  AVX2 kernel (AVX-512VL rotates when present) with deferred per-lane repair, and a
-  safe scalar fallback. **Every backend is bit-identical**, including final RNG state.
-- **`Xoshiro256PlusPlus`**: SplitMix64 seeding and 2^128 jumps for parallel streams.
-- 3,264 bytes of shared tables. Generation never allocates. Not cryptographic.
+Heads up: this was AI generated. Claude wrote most of the code, and I steered it
+and made the design calls.
+
+## Usage
 
 ```rust
 use tiny_normal::{NormalSampler, NormalSampler4};
 
+// Two normal values at a time
 let mut s = NormalSampler::from_seed(42);
 let [a, b] = s.normal_pair();
 
+// Or fill a buffer from four streams at once (faster)
 let mut bulk = NormalSampler4::from_seed(42);
-let mut rows = [[0.0; 4]; 128]; // row k = value k of streams 0, 1, 2, 3
+let mut rows = [[0.0; 4]; 128];
 bulk.fill_values(&mut rows);
 ```
 
-## Contracts
+## What's inside
 
-- Seeded output is deterministic. A fill may be split at any point with identical
-  results, and an empty fill consumes nothing.
-- `NormalSampler4` lane `i` uses jump segment `i` (main) and `4 + i` (repair), so one
-  sampler occupies `NormalSampler4::SEGMENTS` = 8 segments. To give each thread its
-  own sampler, pass `from_rng` an engine advanced by 8 jumps per thread.
-- Runtime CPU detection runs once per `fill_values`. With
-  `-C target-cpu=native`, detection compiles away and the kernel is inlined.
+- `NormalSampler`: a Ziggurat sampler, plus a plain Box–Muller version to compare against.
+- `NormalSampler4`: four independent streams at once. It uses AVX2 when your CPU has
+  it and plain code otherwise, and both give exactly the same numbers.
+- `Xoshiro256PlusPlus`: the random number generator underneath. It can `jump` ahead
+  so that separate threads get separate streams.
 
-## Performance (Ryzen 7 7840HS, one core)
+The same seed always gives the same numbers. It isn't meant for cryptography.
 
-| Sampler | Throughput |
+## Speed
+
+On my laptop (Ryzen 7 7840HS, one core):
+
+| | Numbers per second |
 |---|---|
-| `NormalSampler4::fill_values` | ~1.0-1.3 G normals/s |
-| `NormalSampler::fill_pairs` | ~0.56-0.74 G normals/s |
-| Box–Muller reference | ~0.08-0.11 G normals/s |
+| `NormalSampler4` | about 1 billion |
+| `NormalSampler` | about 600 million |
+| Box–Muller | about 90 million |
 
-Run `cargo run --release --example bench` (env: `TINY_BENCH_METHOD`, `TINY_BENCH_MODE`,
-`TINY_BENCH_ROUNDS`, `TINY_BENCH_SEED`).
+Try it yourself with `cargo run --release --example bench`.
 
-## Validation
+## Testing
 
-- Tables were generated at 70-80 digits, and the alias masses agree with independent
-  quadrature to within 8e-17.
-- A 1e8-sample chi² test of the uncommon path against its exact density passes. A
-  deliberately broken variant fails it.
-- Each SIMD backend matches an independent scalar reference bit for bit on 16.8M
-  values, including all repair positions and split fills.
-- Miri passes on both the SIMD and the scalar paths. A standalone allocation audit is
-  in `tests/memory.rs`.
-- PractRand 0.95, 256 GB per stream through Φ: no persistent anomaly. A defective
-  control fails at 16 GB.
+I checked it a fair bit: the output matches the normal distribution in statistical
+tests, the fast and plain versions agree bit for bit, it runs clean under Miri, and
+it passed PractRand up to 256 GB. It's only been run on x86-64 Windows so far.
 
-These checks are evidence, not proofs. Validation ran on x86-64 Windows; aarch64 is
-compile-checked only. Finite precision means discrete output.
+There's also an MCMC example (`examples/mcmc.rs`) that uses the sampler for real
+sampling problems.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The Ziggurat tables are independently generated;
-earlier versions used tables from the Rand project (MIT), which are no longer included.
+MIT
