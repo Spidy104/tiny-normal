@@ -1,0 +1,27 @@
+[package]
+name = "tiny-normal"
+version = "0.6.0"
+edition = "2024"
+rust-version = "1.99"
+description = "Small, allocation-free standard-normal sampler: modified Ziggurat with a bit-identical AVX2 four-stream kernel"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["random", "normal", "gaussian", "ziggurat", "simd"]
+categories = ["algorithms", "mathematics", "simulation"]
+include = [
+    "src/**",
+    "tests/**",
+    "examples/bench.rs",
+    "README.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+    "LICENSE-TABLES-MIT",
+]
+
+[[test]]
+name = "memory"
+harness = false
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
