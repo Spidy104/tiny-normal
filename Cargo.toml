@@ -4,7 +4,8 @@ version = "0.6.0"
 edition = "2024"
 rust-version = "1.99"
 description = "Small, allocation-free standard-normal sampler: modified Ziggurat with a bit-identical AVX2 four-stream kernel"
-license = "MIT OR Apache-2.0"
+license = "MIT"
+repository = "https://github.com/Spidy104/tiny-normal"
 readme = "README.md"
 keywords = ["random", "normal", "gaussian", "ziggurat", "simd"]
 categories = ["algorithms", "mathematics", "simulation"]
@@ -13,9 +14,7 @@ include = [
     "tests/**",
     "examples/bench.rs",
     "README.md",
-    "LICENSE-MIT",
-    "LICENSE-APACHE",
-    "LICENSE-TABLES-MIT",
+    "LICENSE",
 ]
 
 [[test]]

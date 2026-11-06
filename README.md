@@ -61,6 +61,5 @@ compile-checked only. Finite precision means discrete output.
 
 ## License
 
-Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your
-option. `LICENSE-TABLES-MIT` preserves the notice of the Rand project, whose tables
-earlier versions used.
+MIT, see [LICENSE](LICENSE). The Ziggurat tables are independently generated;
+earlier versions used tables from the Rand project (MIT), which are no longer included.
